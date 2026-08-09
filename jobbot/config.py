@@ -27,6 +27,7 @@ class Config:
 
         # --- secrets (GitHub Actions injects these) ---
         self.anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "")
+        self.gemini_key = os.environ.get("GEMINI_API_KEY", "")
         self.telegram_bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
         self.telegram_chat_id = os.environ.get("TELEGRAM_CHAT_ID", "")
         self.gmail_client_id = os.environ.get("GMAIL_CLIENT_ID", "")
@@ -46,16 +47,32 @@ class Config:
         self.dry_run = _env_bool("DRY_RUN", True)
         self.max_auto_applies_per_day = int(os.environ.get("MAX_AUTO_APPLIES_PER_DAY", "8"))
 
-        # Cheap model screens hundreds of postings; expensive model only
-        # writes the handful of cover letters you actually approve.
-        self.screen_model = os.environ.get("SCREEN_MODEL", "claude-haiku-4-5-20251001")
-        self.write_model = os.environ.get("WRITE_MODEL", "claude-sonnet-5")
+        # --- model provider ---------------------------------------------
+        # LLM_PROVIDER=gemini runs everything on a Google AI Studio key.
+        self.llm_provider = os.environ.get("LLM_PROVIDER", "anthropic").lower()
+
+        # Cheap model screens hundreds of postings; the stronger one only
+        # writes the handful of cover letters you actually send.
+        _defaults = {
+            "anthropic": ("claude-haiku-4-5-20251001", "claude-sonnet-5"),
+            "gemini": ("gemini-2.5-flash-lite", "gemini-2.5-pro"),
+        }
+        _screen, _write = _defaults.get(self.llm_provider, _defaults["anthropic"])
+        self.screen_model = os.environ.get("SCREEN_MODEL", _screen)
+        self.write_model = os.environ.get("WRITE_MODEL", _write)
+
+        # Seconds between LLM calls. Free-tier Gemini is 10-15 requests per
+        # minute, so 5.0 keeps you under it. With Cloud billing enabled you
+        # are on Tier 1 (150+ RPM) and can drop this to 0.
+        self.llm_min_interval = float(os.environ.get("LLM_MIN_INTERVAL", "0"))
 
         self.resume_path = ROOT / self.identity.get("resume_path", "assets/resume.pdf")
 
     def missing_secrets(self) -> list[str]:
+        key = self.gemini_key if self.llm_provider == "gemini" else self.anthropic_key
+        keyname = "GEMINI_API_KEY" if self.llm_provider == "gemini" else "ANTHROPIC_API_KEY"
         required = {
-            "ANTHROPIC_API_KEY": self.anthropic_key,
+            keyname: key,
             "TELEGRAM_BOT_TOKEN": self.telegram_bot_token,
             "TELEGRAM_CHAT_ID": self.telegram_chat_id,
         }
