@@ -2,46 +2,51 @@ name: jobbot
 
 on:
   schedule:
-    # Every 30 min between 03:00 and 15:00 UTC (08:30-20:30 IST).
-    # GitHub queues cron jobs, so expect a few minutes of drift.
-    - cron: "*/30 3-15 * * *"
+    - cron: '*/30 * * * *'
   workflow_dispatch:
     inputs:
-      check:
-        description: "Run config check only"
+      config_check_only:
+        description: 'Run config check only'
+        required: false
         type: boolean
         default: false
 
-# Prevents two runs overlapping and fighting over state.json
-concurrency:
-  group: jobbot
-  cancel-in-progress: false
+permissions:
+  contents: write
 
 jobs:
   run:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-          cache: pip
+          python-version: '3.11'
+          cache: 'pip'
 
-      - run: pip install -r requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Check required secrets
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          if [ -z "$GEMINI_API_KEY" ] || [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+            echo "Error: Missing required secrets (GEMINI_API_KEY, TELEGRAM_BOT_TOKEN, or TELEGRAM_CHAT_ID)."
+            exit 1
+          fi
 
       - name: Run jobbot
         env:
-          # Set repo variable LLM_PROVIDER to "gemini" to switch providers.
-          LLM_PROVIDER: ${{ vars.LLM_PROVIDER || 'anthropic' }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          SCREEN_MODEL: ${{ vars.SCREEN_MODEL }}
-          WRITE_MODEL: ${{ vars.WRITE_MODEL }}
-          # 5.0 for free-tier Gemini, 0 once Cloud billing is enabled.
-          LLM_MIN_INTERVAL: ${{ vars.LLM_MIN_INTERVAL || '0' }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
@@ -50,25 +55,17 @@ jobs:
           TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
           TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
           TELEGRAM_SESSION: ${{ secrets.TELEGRAM_SESSION }}
-          TPO_USERNAME: ${{ secrets.TPO_USERNAME }}
-          TPO_PASSWORD: ${{ secrets.TPO_PASSWORD }}
           ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
           ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
-          # Flip this to "false" only after a week of clean dry runs.
-          DRY_RUN: ${{ vars.DRY_RUN || 'true' }}
-          MAX_AUTO_APPLIES_PER_DAY: ${{ vars.MAX_AUTO_APPLIES_PER_DAY || '8' }}
+          DRY_RUN: ${{ vars.DRY_RUN }}
+          CONFIG_CHECK_ONLY: ${{ inputs.config_check_only }}
         run: |
-          if [ "${{ inputs.check }}" = "true" ]; then
-            python -m jobbot.main --check
-          else
-            python -m jobbot.main
-          fi
+          python -m jobbot.main
 
-      - name: Persist state
+      - name: Commit state changes
+        if: always()
         run: |
-          git config user.name  "jobbot"
-          git config user.email "jobbot@users.noreply.github.com"
-          git add state.json
-          git diff --staged --quiet || git commit -m "state: $(date -u +%FT%TZ)"
-          git pull --rebase --autostash || true
-          git push
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state.json || true
+          git diff --quiet && git diff --staged --quiet || (git commit -m "update application state [skip ci]" && git push)
