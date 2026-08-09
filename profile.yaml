@@ -1,0 +1,165 @@
+# ---------------------------------------------------------------------------
+# EDIT THIS FILE. Everything the bot does is driven from here.
+# ---------------------------------------------------------------------------
+
+identity:
+  name: "Varun Kumar"
+  email: "you@example.com"          # the address you apply FROM (must match Gmail account)
+  phone: "+91-XXXXXXXXXX"
+  location: "Prayagraj, India"
+  linkedin: "https://linkedin.com/in/..."
+  github: "https://github.com/..."
+  resume_path: "assets/resume.pdf"  # put your CV here, commit it
+
+  # Campus drives gate on these two before anything else.
+  graduation_year: 2027
+  cgpa: 7.2
+
+# Free text. This is what Claude reads to judge whether a job fits you.
+# Be specific and honest — vague profiles produce garbage match scores.
+background: |
+  B.Tech Computer Science & Engineering, MNNIT Allahabad. CGPA 7.2/10.
+  Graduating fresher, 0 years full-time experience.
+
+  Projects:
+  - Multi-agent LLM fitness assistant (Python, agent orchestration, tool calling)
+  - Real-time chat application on the MERN stack (MongoDB, Express, React, Node)
+  - Movie recommendation engine (collaborative filtering)
+
+  Internship: Machine Learning intern at Rapid Acceleration Partners.
+
+  Skills: Python, C++, JavaScript, React, Node.js, MongoDB, SQL, Git.
+  300+ DSA problems solved. Comfortable with OS, DBMS, computer networks,
+  OOP and system design fundamentals.
+
+  Looking for: full-time SDE / backend / ML engineer roles at product companies
+  or funded startups. Open to relocation across India. Also open to 6-month
+  internships that convert to full-time.
+
+criteria:
+  # A job must plausibly match one of these to be considered at all.
+  titles_include:
+    - software engineer
+    - software developer
+    - sde
+    - backend engineer
+    - full stack
+    - machine learning engineer
+    - ml engineer
+    - data engineer
+    - python developer
+    - graduate engineer trainee
+    - associate engineer
+
+  # Hard kill-switch. If the title contains any of these, it is dropped
+  # before it ever reaches Claude (saves API spend).
+  titles_exclude:
+    - senior
+    - staff
+    - principal
+    - lead
+    - manager
+    - director
+    - architect
+    - head of
+    - vp
+    - sales
+    - marketing
+    - bpo
+    - "non-tech"
+
+  locations:
+    - Bengaluru
+    - Bangalore
+    - Hyderabad
+    - Pune
+    - Noida
+    - Gurugram
+    - Gurgaon
+    - Chennai
+    - Delhi
+    - Mumbai
+    - Remote
+    - India
+
+  max_experience_years: 2     # drop postings demanding more than this
+  min_score: 72               # 0-100 from Claude. Below this you never hear about it.
+  auto_apply_threshold: 85    # only jobs at or above this are eligible for auto-apply
+
+  # --- compensation floor ----------------------------------------------
+  min_base_lpa: 12            # FIXED BASE, not CTC. Set to 0 to disable.
+
+  # Indian postings usually quote CTC, which includes variable pay, joining
+  # bonus and sometimes ESOP paper value. This is what gets multiplied against
+  # a CTC figure to approximate base before comparing to the floor above.
+  # 0.85 is typical for product companies; use 0.75 for service companies.
+  ctc_to_base_ratio: 0.85
+
+  # When salary is not stated, the bot searches the web for it. It will only
+  # auto-apply on an *estimate* if the low end clears the floor by this much,
+  # because estimates carry an error bar and you do not want to spend three
+  # interview rounds discovering the number was 9.
+  estimate_buffer_lpa: 2
+
+  # What to do when the web search comes back inconclusive:
+  #   ask   - Telegram card with a button that emails HR for the base range
+  #   alert - just tell you, no offer to ask
+  #   skip  - drop it silently
+  unknown_salary_action: ask
+
+  # Campus drives are held to the same base floor as everything else.
+  # This sends one short message listing what got filtered out, so a floor
+  # set too high shows up as a visible line rather than an empty inbox.
+  tpo_filter_receipt: true
+
+  # Companies you never want to hear from. Add via the Telegram "Ignore" button.
+  exclude_companies:
+    - Ninja Placements
+
+# ---------------------------------------------------------------------------
+# Where to look
+# ---------------------------------------------------------------------------
+sources:
+  # --- MNNIT Training & Placement Office --------------------------------
+  # Highest-priority source: hard deadlines, no second chance.
+  # Credentials go in GitHub secrets as TPO_USERNAME / TPO_PASSWORD.
+  # NEVER put the password in this file — it gets committed.
+  tpo:
+    base_url: "https://tpo.mnnit.ac.in"
+    login_path: "/new/portal"
+    graduation_year: 2027
+
+    # Run scripts/tpo_probe.py to find the real ones. It prints them.
+    listing_paths:
+      - "/new/portal/dashboard"
+
+    # Leave blank to auto-detect from the login form.
+    field_username: ""
+    field_password: ""
+    field_year: ""
+
+  # Public ATS boards. These are the highest-signal source: postings appear
+  # here before they reach aggregators. Add company slugs freely.
+  greenhouse_boards: [razorpay, postman, gitlab, cred]
+  lever_boards: [swiggy, groww]
+  ashby_boards: [zomato]
+
+  # Adzuna aggregates Naukri/Indeed/company sites. Free key, 250 calls/day.
+  adzuna_queries:
+    - "software engineer fresher"
+    - "backend developer 0-2 years"
+    - "machine learning engineer graduate"
+
+  # The Telegram channel you are a member of. Replace with your @handle.
+  # Add more lines later if you join others.
+  telegram_channels:
+    - "@REPLACE_WITH_YOUR_CHANNEL"
+
+  # Gmail search. LinkedIn job alerts land here — that is the ToS-safe way
+  # to get LinkedIn postings without touching their site.
+  gmail_query: >
+    newer_than:1d -in:spam
+    (from:linkedin.com OR from:naukri.com OR from:instahyre.com
+     OR from:hirist.com OR from:cutshort.io OR from:wellfound.com
+     OR subject:(hiring OR opening OR opportunity OR "job alert" OR shortlist
+                 OR interview OR "application" OR assessment))

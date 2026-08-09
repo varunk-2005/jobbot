@@ -1,0 +1,67 @@
+name: jobbot
+
+on:
+  schedule:
+    # Every 30 min between 03:00 and 15:00 UTC (08:30-20:30 IST).
+    # GitHub queues cron jobs, so expect a few minutes of drift.
+    - cron: "*/30 3-15 * * *"
+  workflow_dispatch:
+    inputs:
+      check:
+        description: "Run config check only"
+        type: boolean
+        default: false
+
+# Prevents two runs overlapping and fighting over state.json
+concurrency:
+  group: jobbot
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Run jobbot
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
+          GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
+          GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+          TELEGRAM_SESSION: ${{ secrets.TELEGRAM_SESSION }}
+          TPO_USERNAME: ${{ secrets.TPO_USERNAME }}
+          TPO_PASSWORD: ${{ secrets.TPO_PASSWORD }}
+          ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+          ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+          # Flip this to "false" only after a week of clean dry runs.
+          DRY_RUN: ${{ vars.DRY_RUN || 'true' }}
+          MAX_AUTO_APPLIES_PER_DAY: ${{ vars.MAX_AUTO_APPLIES_PER_DAY || '8' }}
+        run: |
+          if [ "${{ inputs.check }}" = "true" ]; then
+            python -m jobbot.main --check
+          else
+            python -m jobbot.main
+          fi
+
+      - name: Persist state
+        run: |
+          git config user.name  "jobbot"
+          git config user.email "jobbot@users.noreply.github.com"
+          git add state.json
+          git diff --staged --quiet || git commit -m "state: $(date -u +%FT%TZ)"
+          git pull --rebase --autostash || true
+          git push
