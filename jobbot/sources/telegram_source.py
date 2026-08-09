@@ -4,12 +4,8 @@ Uses your own Telegram account (Telethon + a saved session string), because
 most Indian off-campus job channels do not allow bots to read history.
 """
 import datetime as dt
-import json
-import re
 
-import anthropic
-
-_JSON_RE = re.compile(r"\[.*\]", re.S)
+from .. import llm
 
 EXTRACT_SYSTEM = """You extract job postings from messages in a Telegram jobs channel.
 
@@ -61,17 +57,8 @@ def collect(cfg, hours: int = 6, per_channel: int = 40) -> list[dict]:
     for i in range(0, len(blobs), 12):
         chunk = "\n\n---\n\n".join(blobs[i:i + 12])
         try:
-            resp = anthropic.Anthropic(api_key=cfg.anthropic_key).messages.create(
-                model=cfg.screen_model,
-                max_tokens=3000,
-                system=EXTRACT_SYSTEM,
-                messages=[{"role": "user", "content": chunk}],
-            )
-            text = "".join(b.text for b in resp.content if b.type == "text")
-            m = _JSON_RE.search(text)
-            if not m:
-                continue
-            for j in json.loads(m.group(0)):
+            text = llm.complete(cfg, EXTRACT_SYSTEM, chunk, max_tokens=3000)
+            for j in llm.json_arr(text):
                 j["source"] = "telegram"
                 jobs.append(j)
         except Exception as exc:  # noqa: BLE001
