@@ -1,8 +1,5 @@
 """Scoring postings against the profile, and drafting application text."""
-import json
-import re
-
-import anthropic
+from . import llm
 
 SCREEN_SYSTEM = """You screen job postings for a specific candidate. You are strict.
 
@@ -53,12 +50,6 @@ Rules:
 - No em dashes. No bullet points. No subject line in the body.
 Return only the email body text."""
 
-_JSON_RE = re.compile(r"\{.*\}", re.S)
-
-
-def _client(cfg):
-    return anthropic.Anthropic(api_key=cfg.anthropic_key)
-
 
 def _posting_blob(job: dict) -> str:
     return (
@@ -79,17 +70,10 @@ def screen(cfg, job: dict) -> dict:
         f"JOB POSTING:\n{_posting_blob(job)}"
     )
     try:
-        resp = _client(cfg).messages.create(
-            model=cfg.screen_model,
-            max_tokens=400,
-            system=SCREEN_SYSTEM,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        text = "".join(b.text for b in resp.content if b.type == "text")
-        m = _JSON_RE.search(text)
-        if not m:
+        text = llm.complete(cfg, SCREEN_SYSTEM, prompt, max_tokens=500)
+        out = llm.json_obj(text)
+        if not out:
             return {"score": 0, "reason": "unparseable model response", "is_scam": False}
-        out = json.loads(m.group(0))
         out.setdefault("is_scam", False)
         out.setdefault("scam_reason", "")
         out.setdefault("experience_required", 0)
@@ -109,13 +93,7 @@ def cover_letter(cfg, job: dict) -> str:
         f"ROLE THEY ARE APPLYING TO:\n{_posting_blob(job)}"
     )
     try:
-        resp = _client(cfg).messages.create(
-            model=cfg.write_model,
-            max_tokens=600,
-            system=COVER_SYSTEM,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        return "".join(b.text for b in resp.content if b.type == "text").strip()
+        return llm.complete(cfg, COVER_SYSTEM, prompt, max_tokens=700, heavy=True).strip()
     except Exception as exc:  # noqa: BLE001
         return f"(cover letter generation failed: {exc})"
 
