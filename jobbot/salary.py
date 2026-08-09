@@ -10,12 +10,7 @@ Indian postings routinely quote CTC, which folds in variable pay, joining
 bonus and sometimes ESOP paper value. A 15 LPA CTC can be an 11 LPA base.
 Since the floor here is on BASE, CTC figures get discounted before comparison.
 """
-import json
-import re
-
-import anthropic
-
-_JSON_RE = re.compile(r"\{.*\}", re.S)
+from . import llm
 
 LOOKUP_SYSTEM = """You research what a specific role at a specific company actually pays in India.
 
@@ -44,10 +39,6 @@ confidence rules:
 Never guess to look helpful. "low" is a correct answer."""
 
 
-def _client(cfg):
-    return anthropic.Anthropic(api_key=cfg.anthropic_key)
-
-
 def lookup(cfg, job: dict) -> dict:
     """Web-search what this role pays. Costs a few cents, so callers should
     only invoke it for postings that already passed the fit screen."""
@@ -59,18 +50,13 @@ def lookup(cfg, job: dict) -> dict:
         f"What is the fixed base salary in LPA for this role?"
     )
     try:
-        resp = _client(cfg).messages.create(
-            model=cfg.write_model,
-            max_tokens=1500,
-            system=LOOKUP_SYSTEM,
-            tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": 4}],
-            messages=[{"role": "user", "content": query}],
-        )
-        text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
-        m = _JSON_RE.search(text)
-        if not m:
+        # search=True maps to Anthropic web_search or Gemini Google Search
+        # grounding, depending on the provider.
+        text = llm.complete(cfg, LOOKUP_SYSTEM, query, max_tokens=1500,
+                            heavy=True, search=True)
+        out = llm.json_obj(text)
+        if not out:
             return {"confidence": "low", "basis": "no parseable result", "sources": []}
-        out = json.loads(m.group(0))
         out.setdefault("sources", [])
         out.setdefault("basis", "")
         return out
