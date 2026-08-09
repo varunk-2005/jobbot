@@ -5,11 +5,11 @@
 identity:
   name: "Varun Kumar"
   email: "you@example.com"          # the address you apply FROM (must match Gmail account)
-  phone: "+91-XXXXXXXXXX"
+  phone: "+91-7200039941"
   location: "Prayagraj, India"
-  linkedin: "https://linkedin.com/in/..."
-  github: "https://github.com/..."
-  resume_path: "assets/resume.pdf"  # put your CV here, commit it
+  linkedin: "https://www.linkedin.com/in/varun-kumar-0097602a1/"
+  github: "https://github.com/varunk-2005"
+  resume_path: "https://drive.google.com/file/d/1HLpGVpF36tMN81Ixh32Ca5brsZdOBos7/view?usp=sharing"  # put your CV here, commit it
 
   # Campus drives gate on these two before anything else.
   graduation_year: 2027
@@ -81,6 +81,7 @@ criteria:
     - Mumbai
     - Remote
     - India
+    - outside india
 
   max_experience_years: 2     # drop postings demanding more than this
   min_score: 72               # 0-100 from Claude. Below this you never hear about it.
@@ -134,9 +135,9 @@ sources:
       - "/new/portal/dashboard"
 
     # Leave blank to auto-detect from the login form.
-    field_username: ""
-    field_password: ""
-    field_year: ""
+    field_username: "20233581"
+    field_password: "Varun1234"
+    field_year: "2027"
 
   # Public ATS boards. These are the highest-signal source: postings appear
   # here before they reach aggregators. Add company slugs freely.
