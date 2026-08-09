@@ -34,7 +34,14 @@ jobs:
 
       - name: Run jobbot
         env:
+          # Set repo variable LLM_PROVIDER to "gemini" to switch providers.
+          LLM_PROVIDER: ${{ vars.LLM_PROVIDER || 'anthropic' }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SCREEN_MODEL: ${{ vars.SCREEN_MODEL }}
+          WRITE_MODEL: ${{ vars.WRITE_MODEL }}
+          # 5.0 for free-tier Gemini, 0 once Cloud billing is enabled.
+          LLM_MIN_INTERVAL: ${{ vars.LLM_MIN_INTERVAL || '0' }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
