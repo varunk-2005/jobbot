@@ -6,20 +6,18 @@
    interview invites, assessments. These are the "my name came up" alerts.
 """
 import base64
-import json
 import re
 
-import anthropic
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
+
+from .. import llm
 
 SCOPES = [
     "https://www.googleapis.com/auth/gmail.readonly",
     "https://www.googleapis.com/auth/gmail.send",
 ]
-
-_JSON_RE = re.compile(r"[\[\{].*[\]\}]", re.S)
 
 CLASSIFY_SYSTEM = """You read one email sent to a job-seeking candidate and classify it.
 
@@ -91,18 +89,12 @@ def _header(msg, name: str) -> str:
 
 def _classify(cfg, subject: str, sender: str, body: str) -> dict:
     try:
-        resp = anthropic.Anthropic(api_key=cfg.anthropic_key).messages.create(
-            model=cfg.screen_model,
+        text = llm.complete(
+            cfg, CLASSIFY_SYSTEM,
+            f"FROM: {sender}\nSUBJECT: {subject}\n\nBODY:\n{body}",
             max_tokens=1500,
-            system=CLASSIFY_SYSTEM,
-            messages=[{
-                "role": "user",
-                "content": f"FROM: {sender}\nSUBJECT: {subject}\n\nBODY:\n{body}",
-            }],
         )
-        text = "".join(b.text for b in resp.content if b.type == "text")
-        m = _JSON_RE.search(text)
-        return json.loads(m.group(0)) if m else {"kind": "noise"}
+        return llm.json_obj(text, {"kind": "noise"})
     except Exception:  # noqa: BLE001
         return {"kind": "noise"}
 
