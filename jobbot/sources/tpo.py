@@ -12,14 +12,13 @@ selectors that would break on the first redesign, it strips the page to text
 and lets Claude pull the structure out. Run scripts/tpo_probe.py once to
 confirm login works and see what the parser is actually receiving.
 """
-import json
 import re
 
-import anthropic
 import requests
 from bs4 import BeautifulSoup
 
-_JSON_RE = re.compile(r"\[.*\]", re.S)
+from .. import llm
+
 TIMEOUT = 30
 
 EXTRACT_SYSTEM = """You read a college placement portal page and extract company drives.
@@ -140,17 +139,8 @@ def fetch_drives(cfg, sess: requests.Session) -> list[dict]:
     drives = []
     for blob in blobs:
         try:
-            resp = anthropic.Anthropic(api_key=cfg.anthropic_key).messages.create(
-                model=cfg.screen_model,
-                max_tokens=4000,
-                system=EXTRACT_SYSTEM,
-                messages=[{"role": "user", "content": blob}],
-            )
-            text = "".join(b.text for b in resp.content if b.type == "text")
-            m = _JSON_RE.search(text)
-            if not m:
-                continue
-            for d in json.loads(m.group(0)):
+            text = llm.complete(cfg, EXTRACT_SYSTEM, blob, max_tokens=4000)
+            for d in llm.json_arr(text):
                 d["source"] = "tpo"
                 d["url"] = base + tpo.get("login_path", "/new/portal")
                 drives.append(d)
