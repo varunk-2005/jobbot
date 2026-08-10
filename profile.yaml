@@ -1,22 +1,15 @@
-# ---------------------------------------------------------------------------
-# EDIT THIS FILE. Everything the bot does is driven from here.
-# ---------------------------------------------------------------------------
-
 identity:
   name: "Varun Kumar"
-  email: "varun.koficial@gmail.com"          # the address you apply FROM (must match Gmail account)
+  email: "your_actual_email@gmail.com"  # Update with your active email
   phone: "+91-7200039941"
   location: "Prayagraj, India"
   linkedin: "https://www.linkedin.com/in/varun-kumar-0097602a1/"
   github: "https://github.com/varunk-2005"
-  resume_path: "https://drive.google.com/file/d/1HLpGVpF36tMN81Ixh32Ca5brsZdOBos7/view?usp=sharing"  # put your CV here, commit it
+  resume_path: "https://drive.google.com/file/d/1HLpGVpF36tMN81Ixh32Ca5brsZdOBos7/view?usp=sharing"
 
-  # Campus drives gate on these two before anything else.
   graduation_year: 2027
   cgpa: 7.2
 
-# Free text. This is what Claude reads to judge whether a job fits you.
-# Be specific and honest — vague profiles produce garbage match scores.
 background: |
   B.Tech Computer Science & Engineering, MNNIT Allahabad. CGPA 7.2/10.
   Graduating fresher, 0 years full-time experience.
@@ -36,15 +29,14 @@ background: |
   or funded startups. Open to relocation across India. Also open to 6-month
   internships that convert to full-time.
 
-  CRITICAL COMPENSATION & INTERNSHIP RULES:
-  - For full-time roles: The base salary must be at least 12 LPA.
-  - For internships: Do not judge the role purely on the monthly stipend. You MUST use your training data and web search to estimate the company's average Pre-Placement Offer (PPO) package.
-  - If the role is an internship, but the company rarely gives PPOs, or their average PPO is historically below 12 LPA base, SCORE IT LOW and reject it.
+  CRITICAL EVALUATION RULES FOR INTERNSHIPS & PPO:
+  - For full-time roles: Base salary floor is 12 LPA.
+  - For internships: Do NOT judge solely on monthly stipend. Use web search to estimate the company's average Pre-Placement Offer (PPO) package for software roles.
+  - If the internship's historical average PPO is at or above 12 LPA base, give it a high match score.
+  - If the company rarely converts interns to full-time, or their average PPO is below 12 LPA, reject or score low.
 
 criteria:
-  # A job must plausibly match one of these to be considered at all.
   titles_include:
-    - intern
     - software engineer
     - software developer
     - sde
@@ -56,9 +48,10 @@ criteria:
     - python developer
     - graduate engineer trainee
     - associate engineer
+    - intern
+    - sde intern
+    - software engineer intern
 
-  # Hard kill-switch. If the title contains any of these, it is dropped
-  # before it ever reaches Claude (saves API spend).
   titles_exclude:
     - senior
     - staff
@@ -89,81 +82,44 @@ criteria:
     - India
     - outside india
 
-  max_experience_years: 2     # drop postings demanding more than this
-  min_score: 72               # 0-100 from Claude. Below this you never hear about it.
-  auto_apply_threshold: 85    # only jobs at or above this are eligible for auto-apply
+  max_experience_years: 2
+  min_score: 72
+  auto_apply_threshold: 85
 
-  # --- compensation floor ----------------------------------------------
-  min_base_lpa: 0            # FIXED BASE, not CTC. Set to 0 to disable.
+  # Set to 0 so Python does not drop internships before Gemini checks PPO
+  min_base_lpa: 0
 
-  # Indian postings usually quote CTC, which includes variable pay, joining
-  # bonus and sometimes ESOP paper value. This is what gets multiplied against
-  # a CTC figure to approximate base before comparing to the floor above.
-  # 0.85 is typical for product companies; use 0.75 for service companies.
   ctc_to_base_ratio: 0.85
-
-  # When salary is not stated, the bot searches the web for it. It will only
-  # auto-apply on an *estimate* if the low end clears the floor by this much,
-  # because estimates carry an error bar and you do not want to spend three
-  # interview rounds discovering the number was 9.
   estimate_buffer_lpa: 2
-
-  # What to do when the web search comes back inconclusive:
-  #   ask   - Telegram card with a button that emails HR for the base range
-  #   alert - just tell you, no offer to ask
-  #   skip  - drop it silently
-  unknown_salary_action: ask
-
-  # Campus drives are held to the same base floor as everything else.
-  # This sends one short message listing what got filtered out, so a floor
-  # set too high shows up as a visible line rather than an empty inbox.
+  unknown_salary_action: alert
   tpo_filter_receipt: true
 
-  # Companies you never want to hear from. Add via the Telegram "Ignore" button.
   exclude_companies:
     - Ninja Placements
 
-# ---------------------------------------------------------------------------
-# Where to look
-# ---------------------------------------------------------------------------
 sources:
-  # --- MNNIT Training & Placement Office --------------------------------
-  # Highest-priority source: hard deadlines, no second chance.
-  # Credentials go in GitHub secrets as TPO_USERNAME / TPO_PASSWORD.
-  # NEVER put the password in this file — it gets committed.
   tpo:
     base_url: "https://tpo.mnnit.ac.in"
     login_path: "/new/portal"
     graduation_year: 2027
-
-    # Run scripts/tpo_probe.py to find the real ones. It prints them.
     listing_paths:
       - "/new/portal/dashboard"
-
-    # Leave blank to auto-detect from the login form.
     field_username: "20233581"
-    field_password: "Varun1234"
+    field_password: ""  # Leave blank; pulls securely from TPO_PASSWORD in secrets
     field_year: "2027"
 
-  # Public ATS boards. These are the highest-signal source: postings appear
-  # here before they reach aggregators. Add company slugs freely.
   greenhouse_boards: [razorpay, postman, gitlab, cred]
   lever_boards: [swiggy, groww]
   ashby_boards: [zomato]
 
-  # Adzuna aggregates Naukri/Indeed/company sites. Free key, 250 calls/day.
   adzuna_queries:
     - "software engineer fresher"
     - "backend developer 0-2 years"
     - "machine learning engineer graduate"
 
-  # The Telegram channel you are a member of. Replace with your @handle.
-  # Add more lines later if you join others.
   telegram_channels:
     - -1003449094544
 
-  # Gmail search. LinkedIn job alerts land here — that is the ToS-safe way
-  # to get LinkedIn postings without touching their site.
   gmail_query: >
     newer_than:1d -in:spam
     (from:linkedin.com OR from:naukri.com OR from:instahyre.com
