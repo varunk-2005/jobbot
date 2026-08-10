@@ -154,7 +154,7 @@ sources:
   # The Telegram channel you are a member of. Replace with your @handle.
   # Add more lines later if you join others.
   telegram_channels:
-    - "@REPLACE_WITH_YOUR_CHANNEL"
+    - "-1003449094544"
 
   # Gmail search. LinkedIn job alerts land here — that is the ToS-safe way
   # to get LinkedIn postings without touching their site.
