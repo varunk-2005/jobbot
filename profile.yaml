@@ -4,7 +4,7 @@
 
 identity:
   name: "Varun Kumar"
-  email: "you@example.com"          # the address you apply FROM (must match Gmail account)
+  email: "varun.koficial@gmail.com"          # the address you apply FROM (must match Gmail account)
   phone: "+91-7200039941"
   location: "Prayagraj, India"
   linkedin: "https://www.linkedin.com/in/varun-kumar-0097602a1/"
@@ -36,9 +36,15 @@ background: |
   or funded startups. Open to relocation across India. Also open to 6-month
   internships that convert to full-time.
 
+  CRITICAL COMPENSATION & INTERNSHIP RULES:
+  - For full-time roles: The base salary must be at least 12 LPA.
+  - For internships: Do not judge the role purely on the monthly stipend. You MUST use your training data and web search to estimate the company's average Pre-Placement Offer (PPO) package.
+  - If the role is an internship, but the company rarely gives PPOs, or their average PPO is historically below 12 LPA base, SCORE IT LOW and reject it.
+
 criteria:
   # A job must plausibly match one of these to be considered at all.
   titles_include:
+    - intern
     - software engineer
     - software developer
     - sde
@@ -88,7 +94,7 @@ criteria:
   auto_apply_threshold: 85    # only jobs at or above this are eligible for auto-apply
 
   # --- compensation floor ----------------------------------------------
-  min_base_lpa: 12            # FIXED BASE, not CTC. Set to 0 to disable.
+  min_base_lpa: 0            # FIXED BASE, not CTC. Set to 0 to disable.
 
   # Indian postings usually quote CTC, which includes variable pay, joining
   # bonus and sometimes ESOP paper value. This is what gets multiplied against
